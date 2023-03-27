@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const bcrypt=require('bcrypt')
+
 
 const userSchema = mongoose.Schema(
   {
@@ -21,7 +23,7 @@ const userSchema = mongoose.Schema(
       type: String,
       require: [true, "Please Add a password"],
       minLength: [6, "password must be more than 6 characters"],
-      maxLength: [23, "password must be less than 23 characters"],
+      // maxLength: [23, "password must be less than 23 characters"],
     },
     photo: {
       type: String,
@@ -42,5 +44,22 @@ const userSchema = mongoose.Schema(
     timestamps: true,
   }
 );
+
+
+//   Encrypt password before saving to DB
+userSchema.pre("save", async function (next) {
+  // below line only modify when password change otherwise like name ,email,phone those time dont change simply ignore it
+  // if this password not modify then i don't want to do anything just ignore next()
+  if (!this.isModified("password")) {
+    return next();
+  }
+
+  // Hash password
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(this.password, salt);
+  this.password = hashedPassword;
+  next();
+});
+
 
 module.exports = mongoose.model("User", userSchema);
