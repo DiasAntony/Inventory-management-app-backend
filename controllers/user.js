@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/user");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 // generate jwt token
 // id =>db user id
@@ -52,7 +52,8 @@ exports.registerUser = asyncHandler(async (req, res) => {
     httpsOnly: true,
     expires: new Date(Date.now() + 1000 * 86400), // 1 day
     sameSite: "none",
-    secure: true,
+    secure: process.env.NODE_ENV === "development" ? false : true,
+    // secure: true
   });
 
   //   some times its does'nt show postmon res.cookie because we set secure=true
@@ -114,7 +115,9 @@ exports.loginUser = asyncHandler(async (req, res) => {
       httpOnly: true,
       expires: new Date(Date.now() + 1000 * 86400), // 1 day
       sameSite: "none",
-      secure: true,
+      // secure: process.env.NODE_ENV !== "development",
+      secure: process.env.NODE_ENV === "development" ? false : true,
+      // secure: true,
     });
   }
 
@@ -143,7 +146,76 @@ exports.logoutUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     expires: new Date(0),
     sameSite: "none",
+    // secure: process.env.NODE_ENV !== "development",
+    secure: process.env.NODE_ENV === "development" ? false : true,
     secure: true,
   });
   return res.status(200).json({ message: "Successfully Logged Out" });
+});
+
+// getUser profile or data
+
+exports.getUser = asyncHandler(async (req, res) => {
+  // inthis case req.user._id ==> req.user from request of middleware and thats's a exact user(db) so
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    const { _id, name, email, photo, phone, bio } = user;
+    res.status(200).json({
+      _id,
+      name,
+      email,
+      photo,
+      phone,
+      bio,
+    });
+  } else {
+    res.status(400);
+    throw new Error("User Not Found");
+  }
+});
+
+// get user status (like if user loggedIn or not )
+
+exports.loginStatus=asyncHandler(async(req,res)=>{
+// you already learn from protect middleware below 
+  const token = req.cookies.token;
+  if (!token) {
+    return res.json(false);
+  }
+  // Verify Token
+  const verified = jwt.verify(token, process.env.JWT_SECRET);
+  if (verified) {
+    return res.json(true);
+  }
+  return res.json(false);
+})
+
+// Update User
+exports.updateUser = asyncHandler(async (req, res) => {
+  // req.user._id from middleware request
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    const { name, email, photo, phone, bio } = user;
+    user.email = email;
+    // user sometimes upadte only one or 2,3 or non so that
+    user.name = req.body.name || name;
+    user.phone = req.body.phone || phone;
+    user.bio = req.body.bio || bio;
+    user.photo = req.body.photo || photo;
+
+    const updatedUser = await user.save();
+    res.status(200).json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      photo: updatedUser.photo,
+      phone: updatedUser.phone,
+      bio: updatedUser.bio,
+    });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
 });
