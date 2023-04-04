@@ -54,7 +54,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
     path: "/",
     httpsOnly: true,
     expires: new Date(Date.now() + 1000 * 86400), // 1 day
-    sameSite: "none",
+    // sameSite: "none",
     secure: process.env.NODE_ENV === "development" ? false : true,
     // secure: true
   });
@@ -117,7 +117,7 @@ exports.loginUser = asyncHandler(async (req, res) => {
       path: "/",
       httpOnly: true,
       expires: new Date(Date.now() + 1000 * 86400), // 1 day
-      sameSite: "none",
+      // sameSite: "none",
       // secure: process.env.NODE_ENV !== "development",
       secure: process.env.NODE_ENV === "development" ? false : true,
       // secure: true,
@@ -148,10 +148,10 @@ exports.logoutUser = asyncHandler(async (req, res) => {
     path: "/",
     httpOnly: true,
     expires: new Date(0),
-    sameSite: "none",
+    // sameSite: "none",
     // secure: process.env.NODE_ENV !== "development",
     secure: process.env.NODE_ENV === "development" ? false : true,
-    secure: true,
+    // secure: true,
   });
   return res.status(200).json({ message: "Successfully Logged Out" });
 });
